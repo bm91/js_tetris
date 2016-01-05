@@ -12,75 +12,99 @@ tiles = new Array();
 
 current_tile = {};
 
-field = new Array(num_x*num_y);
+//field = new Array(num_x*num_y);
+
+field = [];
+
+for(var i = 0;i < num_y;i++){
+  field[i] = new Array(num_x);
+}
+
+/*for(var i = 0;i < num_y;i++){
+  for(var j = 0;j < num_x;j++){
+    field[i][j] = 0;
+  }
+}*/
 
 uf = setInterval(updateField, 100);
 block_uf = false;
 ltfd = setInterval(letTilesFallDown, 1000);
 block_ltfd = false;
 
-for(var i = 0;i < num_y;i++){
-  field[i] = new Array(num_x);
-}
+blockcolors = [];
 
-for(var i = 0;i < num_y;i++){
-  for(var j = 0;j < num_x;j++){
-    field[j][i] = 0;
-  }
-}
-
-blockcolors = new Array();
-
-function Block (id, position, color){
-    var structure = [[[0,0,0,0], [0,0,0,0], [0,0,0,0],[0,0,0,0]],
-                     [[0,0,0,0], [0,0,0,0], [0,0,0,0],[0,0,0,0]],
-                     [[0,0,0,0], [0,0,0,0], [0,0,0,0],[0,0,0,0]],
-                     [[0,0,0,0], [0,0,0,0], [0,0,0,0],[0,0,0,0]]];
+function Block (id, position, color){ //class prototype for any block
+    var structure = [[[0,0,0,0], [0,0,0,0], [0,0,0,0],[0,0,0,0]], // Every block has 4 states for every possible rotation possition
+                     [[0,0,0,0], [0,0,0,0], [0,0,0,0],[0,0,0,0]], // The array structure gives information about which parts of an 4x4 block
+                     [[0,0,0,0], [0,0,0,0], [0,0,0,0],[0,0,0,0]], // are filled with "block material", respectively defining which type of block
+                     [[0,0,0,0], [0,0,0,0], [0,0,0,0],[0,0,0,0]]]; // is stored in the Block
 
     blockstate = 0;
 
     switch(id){
       case 0:
+      //block form:
+      // [][][][]
         structure[0] = [[1,1,1,1], [0,0,0,0], [0,0,0,0], [0,0,0,0]];
         structure[1] = [[1,0,0,0], [1,0,0,0], [1,0,0,0], [1,0,0,0]];
         structure[2] = [[1,1,1,1], [0,0,0,0], [0,0,0,0], [0,0,0,0]];
         structure[3] = [[1,0,0,0], [1,0,0,0], [1,0,0,0], [1,0,0,0]];
         break;
-      case 1: // --
-        structure[0] = [[1,1,1,0], [0,1,0,0], [0,0,0,0], [0,0,0,0]];
-        structure[1] = [[1,0,0,0], [1,1,0,0], [1,0,0,0], [0,0,0,0]];
-        structure[2] = [[0,0,0,0], [0,1,0,0], [1,1,1,0], [0,0,0,0]];
-        structure[3] = [[0,0,1,0], [0,1,1,0], [0,0,1,0], [0,0,0,0]];
+      case 1:
+      //block form:
+      // [][][]
+      // []
+        structure[0] = [[1,0,0,0], [1,1,1,0], [0,0,0,0], [0,0,0,0]];
+        structure[1] = [[0,1,0,0], [0,1,0,0], [1,1,0,0], [0,0,0,0]];
+        structure[2] = [[1,1,1,0], [0,0,1,0], [0,0,0,0], [0,0,0,0]];
+        structure[3] = [[1,1,0,0], [1,0,0,0], [1,0,0,0], [0,0,0,0]];
         break;
-      case 2: // -|
+      case 2:
+      //block form:
+      // []
+      // [][][]
         structure[0] = [[1,1,1,0], [1,0,0,0], [0,0,0,0], [0,0,0,0]];
         structure[1] = [[1,0,0,0], [1,0,0,0], [1,1,0,0], [0,0,0,0]];
         structure[2] = [[0,0,1,0], [1,1,1,0], [0,0,0,0], [0,0,0,0]];
         structure[3] = [[1,1,0,0], [0,1,0,0], [0,1,0,0], [0,0,0,0]];
         break;
-      case 3: // []
+      case 3:
+      //block form:
+      // [][]
+      // [][]
         structure[0] = [[1,1,0,0], [1,1,0,0], [0,0,0,0], [0,0,0,0]];
         structure[1] = [[1,1,0,0], [1,1,0,0], [0,0,0,0], [0,0,0,0]];
         structure[2] = [[1,1,0,0], [1,1,0,0], [0,0,0,0], [0,0,0,0]];
         structure[3] = [[1,1,0,0], [1,1,0,0], [0,0,0,0], [0,0,0,0]];
         break;
-      case 4: // |-
+      case 4:
+      //block form:
+      // [][]
+      //   [][]
         structure[0] = [[0,1,1,0], [1,1,0,0], [0,0,0,0], [0,0,0,0]];
         structure[1] = [[1,0,0,0], [1,1,0,0], [0,1,0,0], [0,0,0,0]];
         structure[2] = [[0,1,1,0], [1,1,0,0], [0,0,0,0], [0,0,0,0]];
         structure[3] = [[1,0,0,0], [1,1,0,0], [0,1,0,0], [0,0,0,0]];
         break;
-      case 5: // -|-
-        structure[0] = [[1,1,1,0], [0,1,0,0], [0,0,0,0], [0,0,0,0]];
-        structure[1] = [[1,0,0,0], [1,1,0,0], [1,0,0,0], [0,0,0,0]];
-        structure[2] = [[0,0,0,0], [0,1,0,0], [1,1,1,0], [0,0,0,0]];
-        structure[3] = [[0,0,1,0], [0,1,1,0], [0,0,1,0], [0,0,0,0]];
-        break;
-      case 6: //--__
+
+      case 5:
+      // block form:
+      //   [][]
+      // [][]
         structure[0] = [[1,1,0,0], [0,1,1,0], [0,0,0,0], [0,0,0,0]];
         structure[1] = [[0,1,0,0], [1,1,0,0], [1,0,0,0], [0,0,0,0]];
         structure[2] = [[1,1,0,0], [0,1,1,0], [0,0,0,0], [0,0,0,0]];
         structure[3] = [[0,1,0,0], [1,1,0,0], [1,0,0,0], [0,0,0,0]];
+        break;
+
+      case 6:
+      //block form:
+      //   []
+      // [][][]
+        structure[0] = [[1,1,1,0], [0,1,0,0], [0,0,0,0], [0,0,0,0]];
+        structure[1] = [[1,0,0,0], [1,1,0,0], [1,0,0,0], [0,0,0,0]];
+        structure[2] = [[0,0,0,0], [0,1,0,0], [1,1,1,0], [0,0,0,0]];
+        structure[3] = [[0,0,1,0], [0,1,1,0], [0,0,1,0], [0,0,0,0]];
         break;
       default: //error
         structure = [[1,1,1,1], [1,1,1,1], [1,1,1,1], [1,1,1,1]];
@@ -91,9 +115,6 @@ function Block (id, position, color){
     this.blockstate = blockstate;
     this.color = color;
     this.blocked = false;
-
-
-
 }
 
 function init(){
@@ -105,7 +126,7 @@ function init(){
   addTiles();
 }
 
-function addTiles() { // part of the init
+function addTiles() { // part of the init, prepared the DOM Elements of the website
 
   var ctrlwindowl = document.querySelector("#controlwindow_left");
 
@@ -129,7 +150,7 @@ function addTiles() { // part of the init
 
 }
 
-function resizecontrol(){
+function resizecontrol(){ // function for resizing the browser window
   var ctrlwindow = document.querySelector("#controlwindow");
   var ctrlwindowl = document.querySelector("#controlwindow_left");
   var ctrlwindowr = document.querySelector("#controlwindow_right");
@@ -182,6 +203,7 @@ function updateField(){
     t[i].style.backgroundColor = "white";
     field[parseInt(i % num_x)][parseInt(i / num_x)] = 0;
   }
+
 
   for(var i = 0;i < tiles.length;i++){
     for(var x = 0;x < 4;x++){
@@ -237,7 +259,7 @@ function checkIfLineCompleted(){
       for(var i = 0;i < tiles.length;i++){
         for(var xx = 0;xx < 4;xx++){
           for(var yy = 0;yy < 4;yy++){
-            if(tiles[i].position[1] + yy == y && tiles[i].structure[xx][yy] == 1){ //delete tiles out of affected blocks
+            if(tiles[i].position[1] + yy == y && tiles[i].structure[tiles[i].blockstate][xx][yy] == 1){ //delete tiles out of affected blocks
               tiles[i].structure[tiles[i].blockstate][xx][yy] = 0;
             }
           }
@@ -289,7 +311,7 @@ function moveTilesHor(direction){
             if(field[tiles[tiles.length - 1].position[0] + x - 1][tiles[tiles.length - 1].position[1] + y] == 1 // check if tile next to block is occupied
                 && tiles[tiles.length - 1].structure[tiles[tiles.length - 1].blockstate][x - 1][y] == 0) // and check if next tile is part of block
                   allow_movement = false;
-          } catch(TypeError){}
+          } catch(TypeError){ allow_movement = false;}
         }
       }
 
@@ -297,10 +319,14 @@ function moveTilesHor(direction){
           && tiles[tiles.length - 1].blocked == false
           && allow_movement == true)
         tiles[tiles.length - 1].position[0] -= 1;
+
     }
     if(direction == "right"){
 
       allow_movement = true;
+
+      debugstr = "";
+      debugstr2 = "";
 
       for(var x = 0;x < 4;x++){
         for(var y = 0;y < 4;y++){
@@ -308,14 +334,16 @@ function moveTilesHor(direction){
           if(field[tiles[tiles.length - 1].position[0] + x + 1][tiles[tiles.length - 1].position[1] + y] == 1 //check if tile next to block is occupied
               && tiles[tiles.length - 1].structure[tiles[tiles.length - 1].blockstate][x + 1][y] == 0) // and check if next tile is part of block
                 allow_movement = false;
-          } catch(TypeError) {}
+          } catch(TypeError) { allow_movement = false;}
         }
       }
+
 
       if(tiles[tiles.length - 1].position[0] < num_x - 2
           && tiles[tiles.length - 1].blocked == false
           && allow_movement == true)
         tiles[tiles.length - 1].position[0] += 1;
+
     }
 
     block_ltfd = false;
@@ -409,7 +437,7 @@ function trackkeys(e) {
 
 }
 
-function getrandomcolor () {
+function getrandomcolor () { //create default colors for each block
 
   //var ch = new Array("0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F");
   var ch = new Array("0","1","2","3","4","5","6","7","8","9");
