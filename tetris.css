@@ -3,3 +3,7 @@ div.control {
   border:1px solid black;
   position:absolute;
 }
+
+body {
+  margin:0px;
+}

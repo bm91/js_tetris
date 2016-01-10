@@ -39,16 +39,16 @@ function Block (id, position, color){ //class prototype for any block
                      [[0,0,0,0], [0,0,0,0], [0,0,0,0],[0,0,0,0]], // are filled with "block material", respectively defining which type of block
                      [[0,0,0,0], [0,0,0,0], [0,0,0,0],[0,0,0,0]]]; // is stored in the Block
 
-    blockstate = 0;
+    var blockstate = 0;
 
     switch(id){
       case 0:
       //block form:
       // [][][][]
-        structure[0] = [[1,1,1,1], [0,0,0,0], [0,0,0,0], [0,0,0,0]];
-        structure[1] = [[1,0,0,0], [1,0,0,0], [1,0,0,0], [1,0,0,0]];
-        structure[2] = [[1,1,1,1], [0,0,0,0], [0,0,0,0], [0,0,0,0]];
-        structure[3] = [[1,0,0,0], [1,0,0,0], [1,0,0,0], [1,0,0,0]];
+        structure[0] = [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]];
+        structure[1] = [[0,1,0,0], [0,1,0,0], [0,1,0,0], [0,1,0,0]];
+        structure[2] = [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]];
+        structure[3] = [[0,1,0,0], [0,1,0,0], [0,1,0,0], [0,1,0,0]];
         break;
       case 1:
       //block form:
@@ -101,13 +101,16 @@ function Block (id, position, color){ //class prototype for any block
       //block form:
       //   []
       // [][][]
-        structure[0] = [[1,1,1,0], [0,1,0,0], [0,0,0,0], [0,0,0,0]];
-        structure[1] = [[1,0,0,0], [1,1,0,0], [1,0,0,0], [0,0,0,0]];
-        structure[2] = [[0,0,0,0], [0,1,0,0], [1,1,1,0], [0,0,0,0]];
-        structure[3] = [[0,0,1,0], [0,1,1,0], [0,0,1,0], [0,0,0,0]];
+        structure[0] = [[0,0,0,0], [1,1,1,0], [0,1,0,0], [0,0,0,0]];
+        structure[1] = [[0,1,0,0], [0,1,1,0], [0,1,0,0], [0,0,0,0]];
+        structure[2] = [[0,1,0,0], [1,1,1,0], [0,0,0,0], [0,0,0,0]];
+        structure[3] = [[0,1,0,0], [1,1,0,0], [0,1,0,0], [0,0,0,0]];
         break;
       default: //error
-        structure = [[1,1,1,1], [1,1,1,1], [1,1,1,1], [1,1,1,1]];
+      structure[0] = [[1,1,1,1], [1,1,1,1], [1,1,1,1], [1,1,1,1]];
+      structure[1] = structure[0];
+      structure[2] = structure[0];
+      structure[3] = structure[0];
     }
 
     this.position = position;
@@ -115,6 +118,7 @@ function Block (id, position, color){ //class prototype for any block
     this.blockstate = blockstate;
     this.color = color;
     this.blocked = false;
+
 }
 
 function init(){
@@ -208,14 +212,14 @@ function updateField(){
   for(var i = 0;i < tiles.length;i++){
     for(var x = 0;x < 4;x++){
       for(var y = 0;y < 4;y++){
+        try{
         if(tiles[i].structure[tiles[i].blockstate][x][y] == 1){ //check the pieces of a block and set the tiles where pieces are located
-          try{
             t[tiles[i].position[0] + num_x * tiles[i].position[1] + x + num_x * y].style.backgroundColor = tiles[i].color;
             field[tiles[i].position[0] + x][tiles[i].position[1] + y] = 1;
-          }catch(TypeError){ }
         } else if(field[tiles[i].position[0] + x][tiles[i].position[1] + y] != 1){ //check if other block has already marked the field as set
           field[tiles[i].position[0] + x][tiles[i].position[1] + y] = 0;
         } else {}
+        }catch(TypeError){ }
 
       }
     }
@@ -264,6 +268,7 @@ function checkIfLineCompleted(){
             }
           }
         }
+        //tiles[i].blocked = false;
       }
     }
   }
@@ -303,7 +308,7 @@ function moveTilesHor(direction){
 
     if(direction == "left"){
 
-      allow_movement = true;
+      var allow_movement = true;
 
       for(var x = 0;x < 4;x++){
         for(var y = 0;y < 4;y++){
@@ -311,22 +316,36 @@ function moveTilesHor(direction){
             if(field[tiles[tiles.length - 1].position[0] + x - 1][tiles[tiles.length - 1].position[1] + y] == 1 // check if tile next to block is occupied
                 && tiles[tiles.length - 1].structure[tiles[tiles.length - 1].blockstate][x - 1][y] == 0) // and check if next tile is part of block
                   allow_movement = false;
-          } catch(TypeError){ allow_movement = false;}
+          } catch(TypeError){ }
         }
       }
 
-      if(tiles[tiles.length - 1].position[0] > 0
-          && tiles[tiles.length - 1].blocked == false
+
+      var break_loop = false;
+
+      for(var x = 0;x < 4;x++){
+        for(var y = 0; y < 4; y++){
+          if(/*tiles[tiles.length - 1].position[0] + x >= 0 &&*/ tiles[tiles.length - 1].structure[tiles[tiles.length - 1].blockstate][x][y] == 1){
+            if(tiles[tiles.length - 1].position[0] + x - 1 < 0){
+                allow_movement = false;
+                break_loop = true;
+                break;
+            }
+          }
+        }
+        if(break_loop == true)
+          break;
+      }
+
+
+      if(tiles[tiles.length - 1].blocked == false
           && allow_movement == true)
         tiles[tiles.length - 1].position[0] -= 1;
 
     }
     if(direction == "right"){
 
-      allow_movement = true;
-
-      debugstr = "";
-      debugstr2 = "";
+      var allow_movement = true;
 
       for(var x = 0;x < 4;x++){
         for(var y = 0;y < 4;y++){
@@ -334,10 +353,28 @@ function moveTilesHor(direction){
           if(field[tiles[tiles.length - 1].position[0] + x + 1][tiles[tiles.length - 1].position[1] + y] == 1 //check if tile next to block is occupied
               && tiles[tiles.length - 1].structure[tiles[tiles.length - 1].blockstate][x + 1][y] == 0) // and check if next tile is part of block
                 allow_movement = false;
-          } catch(TypeError) { allow_movement = false;}
+          } catch(TypeError) { }
         }
       }
 
+      var break_loop = false;
+
+      for(var x = 0;x < 4;x++){
+        for(var y = 0; y < 4; y++){
+          if(tiles[tiles.length - 1].position[0] + x >= num_x)
+            break;
+
+          if(tiles[tiles.length - 1].structure[tiles[tiles.length - 1].blockstate][3 - x][y] == 1){
+            if(tiles[tiles.length - 1].position[0] + 3 - x + 1 >= num_x){
+                allow_movement = false;
+                break_loop = true;
+                break;
+            }
+          }
+        }
+        if(break_loop == true)
+          break;
+      }
 
       if(tiles[tiles.length - 1].position[0] < num_x - 2
           && tiles[tiles.length - 1].blocked == false
